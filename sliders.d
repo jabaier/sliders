@@ -139,7 +139,7 @@ class Board {
 class Stats {
   int problem;
   void describe_me() {
-    writeln("#p #exp #gen h");
+    writeln("#p #size #exp #gen h-id");
   }
   void set_problem(int p) {
     problem=p;
@@ -210,15 +210,15 @@ int main(string[] args) {
     help_info = getopt(
                        args,
                        std.getopt.config.required, "problems|p", "Number of random problems to run", &problems,
-                       "use_manhattan|m", "Run with the manhattan distance heuristic (1) [default=true]", &use_manhattan,
-                       "use_uniform|m", "Run with a uniform heuristic (0) [default=false]",  &use_uniform,
+                       "use_manhattan|m", "Run with the manhattan distance heuristic (hid=1) [default=true]", &use_manhattan,
+                       "use_uniform|u", "Run with a uniform heuristic (hid=0) [default=false]",  &use_uniform,
                        "show_solution|s", "Display the problem's solution [default=false]", &show_solution); 
   } catch {
     writeln("Run ",args[0]," -h", " to get a usage example.");
     return 1;
   }
   if (help_info.helpWanted) {
-    defaultGetoptPrinter("Usage:", help_info.options);
+    defaultGetoptPrinter("Options:", help_info.options);
     writeln("Example: ",args[0], " -p 10");
     return 0;
   }
@@ -226,7 +226,7 @@ int main(string[] args) {
   // set the array with the heuristics to use
   int heuristics[];
   if (use_manhattan) heuristics~=1;
-  if (use_manhattan) heuristics~=0;
+  if (use_uniform) heuristics~=0;
 
   // describe the stats output
   st.describe_me();
