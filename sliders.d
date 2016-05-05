@@ -1,9 +1,8 @@
-
-
 import std.stdio;
 import std.math;
 import std.random;
 import std.algorithm.comparison;
+import std.getopt;
 immutable static int SIZE=3;
 
 class Board {
@@ -58,6 +57,11 @@ class Board {
   Board random_succ() {
     int i = uniform(0,4*SIZE-1);
     return ith_succ(i);
+  }
+
+  Board random_walk(int steps) {
+    if (steps==0) return this;
+    else return random_succ().random_walk(steps-1);
   }
 
   Board ith_succ(int n) {  // returns the i-th successor of this board
@@ -134,7 +138,7 @@ class Board {
 
 class Stats {
   int problem;
-  void describeme() {
+  void describe_me() {
     writeln("#p #exp #gen h");
   }
   void set_problem(int p) {
@@ -188,28 +192,60 @@ Board ida(Board state, Stats st) {
   return goal_found;
 }
 
-int main() {
+int main(string[] args) {
   Board b = new Board();
   Stats st = new Stats();
 
   b.make_goal();
   //  b.print();
-  st.describeme();
-  foreach (prob; 0..100) {
-    Board b1 = b.random_walk(20); // perform a number of random actions
-    //    b1.print();
+
+  bool use_manhattan = true;
+  bool use_uniform = false;
+  bool show_solution = false;
+  int problems;
+
+  GetoptResult help_info;
+
+  try {
+    help_info = getopt(
+                       args,
+                       std.getopt.config.required, "problems|p", "Number of random problems to run", &problems,
+                       "use_manhattan|m", "Run with the manhattan distance heuristic (1) [default=true]", &use_manhattan,
+                       "use_uniform|m", "Run with a uniform heuristic (0) [default=false]",  &use_uniform,
+                       "show_solution|s", "Display the problem's solution [default=false]", &show_solution); 
+  } catch {
+    writeln("Run ",args[0]," -h", " to get a usage example.");
+    return 1;
+  }
+  if (help_info.helpWanted) {
+    defaultGetoptPrinter("Usage:", help_info.options);
+    writeln("Example: ",args[0], " -p 10");
+    return 0;
+  }
+
+  // set the array with the heuristics to use
+  int heuristics[];
+  if (use_manhattan) heuristics~=1;
+  if (use_manhattan) heuristics~=0;
+
+  // describe the stats output
+  st.describe_me();
+
+  foreach (prob; 0..problems) {
+    Board init = b.random_walk(20); // perform a number of random actions
+
     st.set_problem(prob);
-    b1.parent=null;
+    init.parent=null;
 
     // run IDA* using the manhattan heuristic
 
-    Board.set_heuristic(1);
-    ida(b1,st);//.print_traceback();
-
-    // run IDA* using a uniform heuristic
-
-    Board.set_heuristic(0);
-    ida(b1,st);//.print_traceback;
+    foreach (h; heuristics) {
+      Board.set_heuristic(h);
+      if (show_solution)
+        ida(init,st).print_traceback();
+      else
+        ida(init,st);
+    }
   }
   return 0;
 }
